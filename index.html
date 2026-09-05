@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Запись на расклад</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap"
+      media="print" onload="this.media='all'">
+<link rel="stylesheet" href="styles.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="progress"><span id="bar"></span></div>
+  <div class="crumbs" id="crumbs"></div>
+</header>
+
+<main id="app">
+  <!-- ШАГ 0 — приветствие -->
+  <section class="step" data-step="0">
+    <div class="hero">
+      <div class="moon" aria-hidden="true">🌙</div>
+      <h1>Расклад на ваш<br>вопрос</h1>
+      <p class="lead">Выберите тему и вопрос — я отвечу лично в течение дня и расскажу, как проходит расклад.</p>
+    </div>
+    <ul class="bullets">
+      <li><span>1</span> Тема и вопрос из каталога</li>
+      <li><span>2</span> Пара слов о себе</li>
+      <li><span>3</span> Я пишу вам в личку</li>
+    </ul>
+    <p class="disclaimer">Расклады носят развлекательный характер и не являются медицинской, психологической или юридической консультацией. 18+</p>
+  </section>
+
+  <!-- ШАГ 1 — темы -->
+  <section class="step" data-step="1" hidden>
+    <h2 class="title">О чём спросим карты?</h2>
+    <p class="sub">Выберите тему — внутри готовые формулировки.</p>
+    <div class="themes" id="themes"></div>
+  </section>
+
+  <!-- ШАГ 2 — вопросы -->
+  <section class="step" data-step="2" hidden>
+    <h2 class="title" id="qTitle">Вопрос</h2>
+    <p class="sub">Выберите готовый или сформулируйте свой.</p>
+    <div class="questions" id="questions"></div>
+    <button class="own" id="ownToggle" type="button">✎ Задать свой вопрос</button>
+    <div class="ownbox" id="ownBox" hidden>
+      <textarea id="ownText" rows="3" maxlength="400" placeholder="Например: стоит ли мне принимать это предложение?"></textarea>
+      <div class="counter"><span id="ownCount">0</span>/400</div>
+    </div>
+  </section>
+
+  <!-- ШАГ 3 — формат -->
+  <section class="step" data-step="3" hidden>
+    <h2 class="title">Формат расклада</h2>
+    <p class="sub">Если сомневаетесь — выберите «Подскажите сами», обсудим в переписке.</p>
+    <div class="formats" id="formats"></div>
+  </section>
+
+  <!-- ШАГ 4 — данные -->
+  <section class="step" data-step="4" hidden>
+    <h2 class="title">Немного о вас</h2>
+    <p class="sub">Дата рождения нужна для расчёта карты года.</p>
+    <label class="field">
+      <span>Как к вам обращаться</span>
+      <input id="name" type="text" maxlength="40" placeholder="Имя" autocomplete="given-name">
+    </label>
+    <label class="field">
+      <span>Дата рождения</span>
+      <input id="bdate" type="date" min="1930-01-01">
+    </label>
+    <div class="field">
+      <span>Удобное время для связи</span>
+      <div class="slots" id="slots"></div>
+    </div>
+  </section>
+
+  <!-- ШАГ 5 — подтверждение -->
+  <section class="step" data-step="5" hidden>
+    <h2 class="title">Проверьте заявку</h2>
+    <div class="summary" id="summary"></div>
+    <label class="consent">
+      <input type="checkbox" id="consent">
+      <span class="box" aria-hidden="true"></span>
+      <span class="txt">Согласен на обработку персональных данных (имя, дата рождения, вопрос) для связи по заявке. <a href="#" id="policyLink">Политика</a></span>
+    </label>
+  </section>
+
+  <!-- ШАГ 6 — готово -->
+  <section class="step done" data-step="6" hidden>
+    <div class="sealwrap"><div class="seal">✦</div></div>
+    <h2 class="title">Заявка отправлена</h2>
+    <p class="sub center">Таролог напишет вам в Telegram. Обычно — в течение 15 минут, но не позже вечера.</p>
+    <button class="ghost" id="directBtn" type="button">Написать напрямую</button>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-inner">
+    <h3>Обработка персональных данных</h3>
+    <p>Мы собираем имя, дату рождения, ваш вопрос и Telegram-аккаунт — только чтобы связаться с вами и провести расклад. Данные не передаются третьим лицам и удаляются по вашему запросу в чате с тарологом.</p>
+    <button class="ghost" id="sheetClose" type="button">Понятно</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
