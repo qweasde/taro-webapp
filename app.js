@@ -277,13 +277,22 @@ async function submit() {
   // боту через Telegram. Telegram сам закроет мини-апп, подтверждение
   // пришлёт бот сообщением в чат.
   if (CONFIG.api === false) {
-    if (tg && tg.initData) {
-      try { tg.sendData(JSON.stringify(body)); return; } catch (_) {}
+    let reason;
+    if (!tg) {
+      reason = 'Эта страница — форма Telegram-бота. Откройте её в Telegram: '
+             + 'напишите боту /start и нажмите «🔮 Записаться».';
+    } else if (!tg.initData) {
+      reason = 'Telegram не передал данные пользователя. Закройте форму и откройте её '
+             + 'заново кнопкой «🔮 Записаться» внизу чата.';
+    } else {
+      try { tg.sendData(JSON.stringify(body)); return; } catch (e) {
+        reason = 'Telegram не принял заявку: ' + (e && e.message ? e.message : e) + '. '
+               + 'Откройте форму кнопкой «🔮 Записаться» внизу чата, а не из меню бота.';
+      }
     }
     state.sending = false;
     notify('error');
-    const msg = 'Отправить заявку можно только из Telegram.';
-    if (tg) tg.showAlert(msg); else alert(msg);
+    if (tg) tg.showAlert(reason); else alert(reason);
     syncButtons();
     return;
   }
