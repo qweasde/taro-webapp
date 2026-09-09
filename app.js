@@ -4,6 +4,8 @@ const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : 
 
 const STEPS = ['', 'Комплекс', 'Тема', 'Вопросы', 'О вас', 'Подтверждение', 'Готово'];
 const SLOTS = ['Утро', 'День', 'Вечер', 'Поздний вечер', 'Любое'];
+// Столько вопросов видно сразу — длинный список утомляет, особенно в VIP на 10 вопросов.
+const VISIBLE_QUESTIONS = 7;
 
 const state = {
   step: 0,
@@ -17,6 +19,7 @@ const state = {
   slot: '',
   consent: false,
   sending: false,
+  showAll: false,     // список вопросов раскрыт целиком
 };
 
 let CATALOG = null;
@@ -239,6 +242,7 @@ function buildQuestions() {
     ? 'Выберите один вопрос — или задайте свой.'
     : `В комплексе «${state.pack.title}» — до ${questions(limit())}. Отметьте нужные.`;
 
+  state.showAll = false;
   state.theme.questions.forEach((q) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -282,11 +286,23 @@ function toggleQuestion(q, btn) {
 function paintQuestions() {
   const nodes = [...$('#questions').children];
   const full = chosenCount() >= limit();
-  nodes.forEach((b) => {
+  nodes.forEach((b, i) => {
     const on = state.picked.includes(b.textContent);
     b.classList.toggle('sel', on);
     b.classList.toggle('locked', full && !on && limit() > 1);
+    // Отмеченный вопрос виден всегда, даже когда список свёрнут.
+    b.classList.toggle('folded', !state.showAll && i >= VISIBLE_QUESTIONS && !on);
   });
+
+  const folded = nodes.filter((b) => b.classList.contains('folded')).length;
+  const more = $('#moreToggle');
+  if (state.showAll) {
+    more.textContent = 'Свернуть список';
+    more.hidden = nodes.length <= VISIBLE_QUESTIONS;
+  } else {
+    more.textContent = `Показать ещё ${questions(folded)}`;
+    more.hidden = folded === 0;
+  }
   $('#ownToggle').disabled = full && !state.ownMode && limit() > 1;
 
   const left = limit() - chosenCount();
@@ -446,6 +462,11 @@ function bindStaticControls() {
     haptic();
     paintQuestions();
     syncButtons();
+  };
+  $('#moreToggle').onclick = () => {
+    state.showAll = !state.showAll;
+    haptic();
+    paintQuestions();
   };
   $('#ownText').oninput = (e) => {
     state.own = e.target.value;

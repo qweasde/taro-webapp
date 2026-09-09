@@ -130,6 +130,13 @@ h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
 .tally.on{border-style:solid;border-color:var(--line-hi);color:var(--gold)}
 .tally.full{border-style:solid;border-color:var(--gold-dim);background:rgba(226,205,160,.08);color:var(--gold)}
 .tally.shake{animation:shake .35s}
+.q.folded{display:none}
+.more{
+  width:100%;margin-bottom:10px;padding:12px;border-radius:14px;cursor:pointer;
+  background:none;border:0;color:var(--gold-dim);font:14px var(--sans);
+  border-bottom:1px solid var(--line);
+}
+.more:active{color:var(--gold)}
 .own{width:100%;padding:14px;border-radius:14px;background:none;border:1px dashed var(--line-hi);color:var(--gold);font-size:14px;cursor:pointer;font-family:var(--sans)}
 .own.sel{background:var(--card-hi);border-style:solid}
 .ownbox{margin-top:10px}
