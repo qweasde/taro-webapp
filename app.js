@@ -54,6 +54,52 @@ function initTelegram() {
   if (u && u.first_name) state.name = u.first_name;
 }
 
+/* ——————————————————— Скрытие клавиатуры ——————————————————— */
+
+/* Экранная клавиатура закрывает половину экрана, а внутри Telegram
+   свернуть её жестом не всегда получается. Кнопка появляется только при
+   вводе текста и держится над клавиатурой: её положение считаем по
+   visualViewport, иначе fixed-элемент уезжает под клавиатуру. */
+function initKeyboardHider() {
+  const btn = $('#kbHide');
+  const vv = window.visualViewport;
+
+  const place = () => {
+    if (!vv) { btn.style.bottom = '16px'; return; }
+    const gap = window.innerHeight - (vv.height + vv.offsetTop);
+    btn.style.bottom = Math.max(gap, 0) + 16 + 'px';
+  };
+
+  const isTextField = (el) =>
+    el && (el.tagName === 'TEXTAREA'
+      || (el.tagName === 'INPUT' && ['text', 'search'].includes(el.type)));
+
+  document.addEventListener('focusin', (e) => {
+    if (!isTextField(e.target)) return;
+    btn.hidden = false;
+    place();
+  });
+  document.addEventListener('focusout', () => {
+    // Небольшая пауза: браузер снимает фокус раньше, чем доходит нажатие.
+    setTimeout(() => {
+      if (!isTextField(document.activeElement)) btn.hidden = true;
+    }, 120);
+  });
+
+  // pointerdown с preventDefault — иначе фокус уйдёт до клика и blur не сработает.
+  btn.addEventListener('pointerdown', (e) => e.preventDefault());
+  btn.onclick = () => {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    btn.hidden = true;
+    haptic();
+  };
+
+  if (vv) {
+    vv.addEventListener('resize', place);
+    vv.addEventListener('scroll', place);
+  }
+}
+
 /* ——————————————————— Черновик ——————————————————— */
 
 function saveDraft() {
@@ -735,6 +781,7 @@ function bindStaticControls() {
 async function init() {
   initTelegram();
   bindStaticControls();
+  initKeyboardHider();
   const requests = [fetch('catalog.json').then((r) => r.json())];
   // Контакт таролога знает сервер; на статике он приходит из config.js.
   if (CONFIG.api !== false) {

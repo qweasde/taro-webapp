@@ -23,7 +23,7 @@ body{
   color:var(--text);
   font:15px/1.5 var(--sans);
   overflow-x:hidden;
-  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
 }
 
 /* ——— фон: ночное небо ——— */
@@ -54,38 +54,38 @@ body{
 .topbar{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 55%,rgba(13,11,26,0));padding-bottom:10px}
 .progress{height:2px;background:rgba(255,255,255,.07)}
 .progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold-dim),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
-.crumbs{padding:10px var(--pad) 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dim);min-height:16px}
+.crumbs{padding:8px var(--pad) 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dim);min-height:16px}
 
-main{padding:8px var(--pad) 24px;max-width:560px;margin:0 auto}
+main{padding:6px var(--pad) 16px;max-width:560px;margin:0 auto}
 .step{animation:rise .32s cubic-bezier(.2,.7,.3,1)}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.01em}
-h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
-.title{font-size:25px;margin:6px 0 6px}
-.sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+h1{font-size:32px;line-height:1.08;margin:10px 0 9px}
+.title{font-size:23px;margin:4px 0 5px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:13.5px}
 .sub.center,.hero{text-align:center}
 
 /* ——— экран приветствия ——— */
-.hero{padding:26px 0 8px}
-.moon{font-size:44px;text-shadow:0 0 22px rgba(226,205,160,.5);animation:float 5s ease-in-out infinite;will-change:transform}
+.hero{padding:14px 0 4px}
+.moon{font-size:36px;text-shadow:0 0 22px rgba(226,205,160,.5);animation:float 5s ease-in-out infinite;will-change:transform}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-.lead{color:var(--muted);max-width:34ch;margin:0 auto;font-size:15px}
-.steps{list-style:none;margin:28px 0;padding:0;display:grid;gap:2px;text-align:left}
-.steps li{position:relative;display:flex;align-items:flex-start;gap:14px;padding:12px 0 12px 0}
+.lead{color:var(--muted);max-width:34ch;margin:0 auto;font-size:14px}
+.steps{list-style:none;margin:18px 0 14px;padding:0;display:grid;gap:0;text-align:left}
+.steps li{position:relative;display:flex;align-items:flex-start;gap:12px;padding:8px 0}
 /* Вертикальная линия связывает шаги в последовательность. */
 .steps li:not(:last-child)::before{
-  content:"";position:absolute;left:13px;top:38px;bottom:-4px;width:1px;
+  content:"";position:absolute;left:12px;top:31px;bottom:-2px;width:1px;
   background:linear-gradient(180deg,var(--line-hi),rgba(226,205,160,.06));
 }
 .steps span{
-  flex:none;width:27px;height:27px;display:grid;place-items:center;border-radius:50%;
-  border:1px solid var(--line-hi);color:var(--gold);font-family:var(--serif);font-size:14px;
+  flex:none;width:25px;height:25px;display:grid;place-items:center;border-radius:50%;
+  border:1px solid var(--line-hi);color:var(--gold);font-family:var(--serif);font-size:13px;
   background:var(--bg);position:relative;z-index:1;
 }
-.steps b{display:block;font-size:14.5px;font-weight:600;margin-top:3px}
-.steps i{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
-.disclaimer{font-size:11.5px;line-height:1.45;color:#6f6889;text-align:center;margin:0}
+.steps b{display:block;font-size:14px;font-weight:600;margin-top:2px}
+.steps i{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:1px;line-height:1.3}
+.disclaimer{font-size:11px;line-height:1.4;color:#6f6889;text-align:center;margin:0}
 
 /* ——— темы ——— */
 .themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -141,13 +141,13 @@ h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
 .own.sel{background:var(--card-hi);border-style:solid}
 .ownbox{margin-top:10px}
 textarea,input[type=text],input[type=date]{
-  width:100%;padding:14px;border-radius:14px;font:15px/1.4 var(--sans);
+  width:100%;padding:12px 14px;border-radius:13px;font:15px/1.4 var(--sans);
   background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--text);
   outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;
 }
 textarea{resize:none}
 textarea:focus,input:focus{border-color:var(--line-hi)}
-input[type=date]{min-height:49px;color-scheme:dark}
+input[type=date]{min-height:45px;color-scheme:dark}
 .counter{text-align:right;font-size:11px;color:var(--muted);margin-top:6px}
 .note{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4;text-transform:none;letter-spacing:0}
 
@@ -184,10 +184,10 @@ input[type=date]{min-height:49px;color-scheme:dark}
 .pack.vip.sel{border-color:var(--gold-dim)}
 
 /* ——— форма ——— */
-.field{display:block;margin-bottom:18px}
-.field>span{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:7px}
 .slots{display:flex;flex-wrap:wrap;gap:8px}
-.slot{padding:10px 15px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px;cursor:pointer;transition:.2s}
+.slot{padding:9px 13px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px;cursor:pointer;transition:.2s}
 .slot.sel{border-color:var(--line-hi);background:var(--card-hi);color:var(--gold)}
 
 /* ——— подтверждение ——— */
@@ -313,13 +313,49 @@ input[type=date]{min-height:49px;color-scheme:dark}
 }
 .days::-webkit-scrollbar{display:none}
 .day{
-  flex:none;min-width:76px;padding:11px 12px;border-radius:14px;cursor:pointer;text-align:center;
+  flex:none;min-width:66px;padding:9px 11px;border-radius:13px;cursor:pointer;text-align:center;
   background:var(--card);border:1px solid var(--line);color:var(--text);transition:.2s;
 }
 .day.sel{border-color:var(--line-hi);background:var(--card-hi)}
-.day b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap}
+.day b{display:block;font-size:13px;font-weight:600;white-space:nowrap}
 .day i{display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:3px}
 .day.sel i{color:var(--gold)}
+
+
+/* ——— кнопка «скрыть клавиатуру» ——— */
+.kbhide{
+  position:fixed;right:14px;bottom:16px;z-index:30;
+  display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:22px;cursor:pointer;
+  background:rgba(20,16,41,.94);border:1px solid var(--line-hi);color:var(--gold);
+  font:13px var(--sans);box-shadow:0 6px 20px rgba(0,0,0,.45);
+  animation:kbin .18s ease-out;
+}
+.kbhide:active{background:var(--card-hi)}
+body:has(#fallbackBar:not([hidden])) .kbhide{bottom:88px}
+@keyframes kbin{from{opacity:0;transform:translateY(6px)}}
+
+/* ——— короткий экран: внутри Telegram по вертикали места меньше ——— */
+@media (max-height:700px){
+  .hero{padding:8px 0 2px}
+  .moon{font-size:30px}
+  h1{font-size:27px;margin:6px 0 7px}
+  .lead{font-size:13.5px}
+  .steps{margin:12px 0 10px}
+  .steps li{padding:6px 0}
+  .steps li:not(:last-child)::before{top:29px}
+  .steps b{font-size:13.5px}
+  .steps i{font-size:11.5px}
+  .title{font-size:21px}
+  .sub{margin-bottom:13px}
+  .pack{padding:13px 100px 26px 14px}
+  .pack b{font-size:18px}
+  .pack u{margin-top:8px}
+  .theme{padding:13px 12px 27px}
+  .theme b{font-size:17px;margin:6px 0 2px}
+  .field{margin-bottom:12px}
+  .done{padding-top:20px}
+  .seal{width:68px;height:68px;font-size:26px}
+}
 
 /* ——— нижняя панель для превью вне Telegram ——— */
 #fallbackBar{
