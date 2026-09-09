@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap"
       media="print" onload="this.media='all'">
-<link rel="stylesheet" href="styles.css?v=4ee033bb">
+<link rel="stylesheet" href="styles.css?v=8e4ca7d1">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -20,6 +20,12 @@
 </header>
 
 <main id="app">
+  <!-- Черновик прошлой заявки -->
+  <div class="resumed" id="resumed" hidden>
+    Вернул вашу заявку с прошлого раза.
+    <button type="button" id="dropDraft">Начать заново</button>
+  </div>
+
   <!-- ШАГ 0 — приветствие -->
   <section class="step" data-step="0">
     <div class="hero">
@@ -30,8 +36,8 @@
     <ol class="steps">
       <li><span>1</span><div><b>Выберите комплекс</b><i>От одного вопроса до личной консультации</i></div></li>
       <li><span>2</span><div><b>Отметьте тему</b><i>Любовь, деньги, работа, выбор и другие</i></div></li>
-      <li><span>3</span><div><b>Отберите вопросы</b><i>Готовые формулировки или свой текст</i></div></li>
-      <li><span>4</span><div><b>Оставьте имя</b><i>И удобное время для связи</i></div></li>
+      <li><span>3</span><div><b>Отберите вопросы</b><i>Готовые формулировки, поиск или свой текст</i></div></li>
+      <li><span>4</span><div><b>Выберите день и время</b><i>Когда вам удобно получить ответ</i></div></li>
       <li><span>5</span><div><b>Отправьте заявку</b><i>Я напишу вам и расскажу, как всё проходит</i></div></li>
     </ol>
     <p class="disclaimer">Расклады носят развлекательный характер и не являются медицинской, психологической или юридической консультацией. 18+</p>
@@ -47,7 +53,7 @@
   <!-- ШАГ 2 — тема -->
   <section class="step" data-step="2" hidden>
     <h2 class="title">О чём спросим карты?</h2>
-    <p class="sub">Выберите тему — внутри готовые формулировки.</p>
+    <p class="sub" id="themeSub">Выберите тему — внутри готовые формулировки.</p>
     <div class="themes" id="themes"></div>
   </section>
 
@@ -55,17 +61,28 @@
   <section class="step" data-step="3" hidden>
     <h2 class="title" id="qTitle">Вопросы</h2>
     <p class="sub" id="qSub">Отметьте вопросы из списка или задайте свой.</p>
+
+    <div class="search">
+      <input id="search" type="search" placeholder="Поиск по вопросам" autocomplete="off">
+      <button type="button" id="searchClear" hidden aria-label="Очистить поиск">✕</button>
+    </div>
+
+    <div class="chips" id="themeChips" hidden></div>
+
     <div class="questions" id="questions"></div>
+    <div class="empty" id="noResults" hidden>Ничего не нашлось — попробуйте другое слово или задайте свой вопрос.</div>
     <button class="more" id="moreToggle" type="button" hidden></button>
     <button class="own" id="ownToggle" type="button">✎ Задать свой вопрос</button>
     <div class="ownbox" id="ownBox" hidden>
       <textarea id="ownText" rows="3" maxlength="400" placeholder="Например: стоит ли мне принимать это предложение?"></textarea>
       <div class="counter"><span id="ownCount">0</span>/400</div>
     </div>
+
+    <div class="picked" id="pickedList" hidden></div>
     <div class="tally" id="tally"></div>
   </section>
 
-  <!-- ШАГ 4 — данные -->
+  <!-- ШАГ 4 — данные и запись -->
   <section class="step" data-step="4" hidden>
     <h2 class="title">Немного о вас</h2>
     <p class="sub" id="aboutSub">Как к вам обращаться и когда удобно получить ответ.</p>
@@ -79,7 +96,11 @@
       <em class="note">Нужна для расчёта главного аркана матрицы судьбы — он входит в комплекс VIP.</em>
     </label>
     <div class="field">
-      <span>Удобное время для связи</span>
+      <span>День</span>
+      <div class="days" id="days"></div>
+    </div>
+    <div class="field">
+      <span>Время</span>
       <div class="slots" id="slots"></div>
     </div>
   </section>
@@ -107,12 +128,12 @@
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-inner">
     <h3>Обработка персональных данных</h3>
-    <p>Мы собираем имя, ваши вопросы, удобное время и Telegram-аккаунт — только чтобы связаться с вами и провести расклад. Дата рождения запрашивается лишь для комплекса VIP, где нужен расчёт аркана матрицы судьбы. Данные не передаются третьим лицам и удаляются по вашему запросу — командой /forget в чате с ботом.</p>
+    <p>Мы собираем имя, ваши вопросы, время записи и Telegram-аккаунт — только чтобы связаться с вами и провести расклад. Дата рождения запрашивается лишь для комплекса VIP, где нужен расчёт аркана матрицы судьбы. Данные не передаются третьим лицам и удаляются по вашему запросу — командой /forget в чате с ботом.</p>
     <button class="ghost" id="sheetClose" type="button">Понятно</button>
   </div>
 </div>
 
-<script src="config.js?v=4ee033bb"></script>
-<script src="app.js?v=4ee033bb"></script>
+<script src="config.js?v=8e4ca7d1"></script>
+<script src="app.js?v=8e4ca7d1"></script>
 </body>
 </html>
