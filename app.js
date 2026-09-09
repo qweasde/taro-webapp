@@ -5,7 +5,7 @@ const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : 
 const STEPS = ['', 'Комплекс', 'Тема', 'Вопросы', 'Запись', 'Подтверждение', 'Готово'];
 // Столько вопросов видно сразу — длинный список утомляет, особенно в VIP на 10 вопросов.
 const VISIBLE_QUESTIONS = 7;
-const BOOKING_DAYS = 14;      // на сколько дней вперёд предлагаем запись
+const BOOKING_DAYS_DEFAULT = 14;   // если каталог не сказал иначе
 const DRAFT_KEY = 'taro-draft-v4';
 const DRAFT_TTL_MS = 24 * 3600 * 1000;
 
@@ -598,10 +598,15 @@ const WEEKDAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн',
                 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
+function bookingDays() {
+  const n = CATALOG && CATALOG.booking_days;
+  return Number.isInteger(n) && n > 0 ? n : BOOKING_DAYS_DEFAULT;
+}
+
 function offeredDates() {
   const out = [];
   const today = new Date();
-  for (let i = 0; i < BOOKING_DAYS; i++) {
+  for (let i = 0; i < bookingDays(); i++) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     out.push({
