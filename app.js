@@ -2,16 +2,16 @@
 
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-const STEPS = ['', 'Тема', 'Вопрос', 'Формат', 'О вас', 'Подтверждение', 'Готово'];
+const STEPS = ['', 'Комплекс', 'Тема', 'Вопросы', 'О вас', 'Подтверждение', 'Готово'];
 const SLOTS = ['Утро', 'День', 'Вечер', 'Поздний вечер', 'Любое'];
 
 const state = {
   step: 0,
-  theme: null,        // {id,title,emoji}
-  question: null,     // строка из каталога
-  own: '',            // свой вопрос
-  ownMode: false,
-  format: null,       // {id,title}
+  pack: null,         // выбранный комплекс из каталога
+  theme: null,        // выбранная тема
+  picked: [],         // отмеченные вопросы из каталога
+  own: '',            // свой вопрос текстом
+  ownMode: false,     // свой вопрос учитывается в лимите комплекса
   name: '',
   bdate: '',
   slot: '',
@@ -47,6 +47,31 @@ function initTelegram() {
   if (u && u.first_name) state.name = u.first_name;
 }
 
+/* ——————————————————— Правила заявки ——————————————————— */
+
+// Сколько вопросов можно отметить — определяет комплекс.
+function limit() {
+  return state.pack ? state.pack.questions : 1;
+}
+
+function ownFilled() {
+  return state.ownMode && state.own.trim().length >= 5;
+}
+
+function chosenCount() {
+  return state.picked.length + (state.ownMode ? 1 : 0);
+}
+
+function needsBirth() {
+  return !!(state.pack && state.pack.needs_birth);
+}
+
+function allQuestions() {
+  const list = state.picked.slice();
+  if (ownFilled()) list.push(state.own.trim());
+  return list;
+}
+
 /* ——————————————————— Рендер ——————————————————— */
 
 function render() {
@@ -57,28 +82,29 @@ function render() {
   syncButtons();
 }
 
-function syncButtons() {
-  const labels = {
-    0: 'Записаться на расклад',
-    1: 'Далее',
-    2: 'Далее',
-    3: 'Далее',
-    4: 'Далее',
-    5: state.sending ? 'Отправляем…' : 'Отправить заявку',
-  };
-  if (!tg) { syncFallbackButton(labels); return; }
-  if (state.step > 0 && state.step < 6) tg.BackButton.show(); else tg.BackButton.hide();
+function mainLabel() {
+  if (state.step === 0) return 'Записаться на расклад';
+  if (state.step === 5) return state.sending ? 'Отправляем…' : 'Отправить заявку';
+  if (state.step === 3) {
+    const left = limit() - chosenCount();
+    if (left > 0 && chosenCount() > 0) return `Далее · выбрано ${chosenCount()} из ${limit()}`;
+  }
+  return 'Далее';
+}
 
+function syncButtons() {
+  if (!tg) { syncFallbackButton(); return; }
+  if (state.step > 0 && state.step < 6) tg.BackButton.show(); else tg.BackButton.hide();
   if (state.step === 6) { tg.MainButton.hide(); return; }
 
-  tg.MainButton.setText(labels[state.step]);
+  tg.MainButton.setText(mainLabel());
   tg.MainButton.show();
   if (canGoNext()) tg.MainButton.enable(); else tg.MainButton.disable();
   if (state.sending) tg.MainButton.showProgress(true); else tg.MainButton.hideProgress();
 }
 
 /* Вне Telegram (превью в браузере) рисуем свою нижнюю кнопку. */
-function syncFallbackButton(labels) {
+function syncFallbackButton() {
   let bar = document.getElementById('fallbackBar');
   if (!bar) {
     bar = document.createElement('div');
@@ -92,16 +118,18 @@ function syncFallbackButton(labels) {
   const nextBtn = document.getElementById('fallbackNext');
   bar.hidden = state.step === 6;
   document.getElementById('fallbackBack').hidden = state.step === 0;
-  nextBtn.textContent = labels[state.step] || '';
+  nextBtn.textContent = mainLabel();
   nextBtn.disabled = !canGoNext();
 }
 
 function canGoNext() {
   switch (state.step) {
-    case 1: return !!state.theme;
-    case 2: return state.ownMode ? state.own.trim().length >= 5 : !!state.question;
-    case 3: return !!state.format;
-    case 4: return state.name.trim().length >= 2 && !!state.bdate && !!state.slot;
+    case 1: return !!state.pack;
+    case 2: return !!state.theme;
+    case 3: return chosenCount() > 0 && chosenCount() <= limit()
+                && (!state.ownMode || ownFilled());
+    case 4: return state.name.trim().length >= 2 && !!state.slot
+                && (!needsBirth() || !!state.bdate);
     case 5: return state.consent && !state.sending;
     default: return true;
   }
@@ -120,7 +148,8 @@ function next() {
   haptic();
   if (state.step === 5) { submit(); return; }
   state.step += 1;
-  if (state.step === 2) buildQuestions();
+  if (state.step === 3) buildQuestions();
+  if (state.step === 4) buildAbout();
   if (state.step === 5) buildSummary();
   render();
 }
@@ -134,19 +163,52 @@ function back() {
 
 /* ——————————————————— Экраны ——————————————————— */
 
+function money(value) {
+  return value.toLocaleString('ru-RU') + ' ₽';
+}
+
+function buildPacks() {
+  const wrap = $('#packs');
+  wrap.innerHTML = '';
+  CATALOG.packages.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pack' + (p.needs_birth ? ' vip' : '');
+    const count = p.questions === 1 ? '1 вопрос' : `${p.questions} вопроса`;
+    b.innerHTML =
+      `<span class="price">${money(p.price)}</span>` +
+      `<b>${p.title}</b>` +
+      `<i>${p.desc}</i>` +
+      `<u>${count} · ${p.duration}</u>`;
+    b.onclick = () => {
+      if (state.pack && state.pack.id !== p.id) {
+        // Лимит изменился — начинаем отбор вопросов заново.
+        state.picked = [];
+        state.ownMode = false;
+        state.own = '';
+      }
+      state.pack = p;
+      [...wrap.children].forEach((c) => c.classList.remove('sel'));
+      b.classList.add('sel');
+      haptic();
+      setTimeout(next, 140);
+    };
+    if (state.pack && state.pack.id === p.id) b.classList.add('sel');
+    wrap.appendChild(b);
+  });
+}
+
 function buildThemes() {
   const wrap = $('#themes');
   wrap.innerHTML = '';
   CATALOG.themes.forEach((t) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'theme';
+    b.className = 'theme' + (state.theme && state.theme.id === t.id ? ' sel' : '');
     b.innerHTML = `<em>${t.emoji}</em><b>${t.title}</b><i>${t.hint}</i>`;
     b.onclick = () => {
+      if (state.theme && state.theme.id !== t.id) state.picked = [];
       state.theme = t;
-      state.question = null;
-      state.own = '';
-      state.ownMode = false;
       [...wrap.children].forEach((c) => c.classList.remove('sel'));
       b.classList.add('sel');
       haptic();
@@ -160,57 +222,96 @@ function buildQuestions() {
   const wrap = $('#questions');
   wrap.innerHTML = '';
   $('#qTitle').textContent = `${state.theme.emoji} ${state.theme.title}`;
+  $('#qSub').textContent = limit() === 1
+    ? 'Выберите один вопрос — или задайте свой.'
+    : `В комплексе «${state.pack.title}» — до ${limit()} вопросов. Отметьте нужные.`;
+
   state.theme.questions.forEach((q) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'q' + (state.question === q ? ' sel' : '');
+    b.className = 'q';
     b.textContent = q;
-    b.onclick = () => {
-      state.question = q;
-      state.ownMode = false;
-      $('#ownBox').hidden = true;
-      $('#ownToggle').classList.remove('sel');
-      [...wrap.children].forEach((c) => c.classList.remove('sel'));
-      b.classList.add('sel');
-      haptic();
-      syncButtons();
-    };
+    b.onclick = () => toggleQuestion(q, b);
     wrap.appendChild(b);
   });
+
   $('#ownToggle').classList.toggle('sel', state.ownMode);
   $('#ownBox').hidden = !state.ownMode;
   $('#ownText').value = state.own;
   $('#ownCount').textContent = state.own.length;
+  paintQuestions();
 }
 
-function buildFormats() {
-  const wrap = $('#formats');
-  wrap.innerHTML = '';
-  const items = CATALOG.formats.concat([
-    { id: 'ask', title: 'Подскажите сами', desc: 'Обсудим в переписке, что подойдёт', duration: '' },
-  ]);
-  items.forEach((f) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'fmt';
-    b.innerHTML = `${f.duration ? `<u>${f.duration}</u>` : ''}<b>${f.title}</b><i>${f.desc}</i>`;
-    b.onclick = () => {
-      state.format = f;
-      [...wrap.children].forEach((c) => c.classList.remove('sel'));
-      b.classList.add('sel');
-      haptic();
-      setTimeout(next, 140);
-    };
-    wrap.appendChild(b);
+function toggleQuestion(q, btn) {
+  const at = state.picked.indexOf(q);
+  if (at >= 0) {
+    state.picked.splice(at, 1);
+  } else if (chosenCount() >= limit()) {
+    if (limit() === 1) {
+      // Для «Экспресса» удобнее менять выбор, а не снимать прежний вручную.
+      state.picked = [q];
+      state.ownMode = false;
+      $('#ownBox').hidden = true;
+      $('#ownToggle').classList.remove('sel');
+    } else {
+      notify('warning');
+      flashTally();
+      return;
+    }
+  } else {
+    state.picked.push(q);
+  }
+  haptic();
+  paintQuestions();
+  syncButtons();
+}
+
+function paintQuestions() {
+  const nodes = [...$('#questions').children];
+  const full = chosenCount() >= limit();
+  nodes.forEach((b) => {
+    const on = state.picked.includes(b.textContent);
+    b.classList.toggle('sel', on);
+    b.classList.toggle('locked', full && !on && limit() > 1);
   });
+  $('#ownToggle').disabled = full && !state.ownMode && limit() > 1;
+
+  const left = limit() - chosenCount();
+  const tally = $('#tally');
+  if (chosenCount() === 0) {
+    tally.textContent = limit() === 1 ? 'Выберите вопрос' : `Выберите до ${limit()} вопросов`;
+    tally.className = 'tally';
+  } else if (left > 0) {
+    tally.textContent = `Выбрано ${chosenCount()} из ${limit()} — можно добавить ещё ${left}`;
+    tally.className = 'tally on';
+  } else {
+    tally.textContent = `Выбрано ${chosenCount()} из ${limit()} — комплекс заполнен`;
+    tally.className = 'tally full';
+  }
+}
+
+function flashTally() {
+  const t = $('#tally');
+  t.classList.add('shake');
+  setTimeout(() => t.classList.remove('shake'), 400);
+}
+
+function buildAbout() {
+  $('#birthField').hidden = !needsBirth();
+  $('#aboutSub').textContent = needsBirth()
+    ? 'Для комплекса VIP нужна дата рождения — по ней считается аркан матрицы судьбы.'
+    : 'Как к вам обращаться и когда удобно получить ответ.';
+  if (!needsBirth()) state.bdate = '';
+  if (state.name) $('#name').value = state.name;
 }
 
 function buildSlots() {
   const wrap = $('#slots');
+  wrap.innerHTML = '';
   SLOTS.forEach((s) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'slot';
+    b.className = 'slot' + (state.slot === s ? ' sel' : '');
     b.textContent = s;
     b.onclick = () => {
       state.slot = s;
@@ -223,28 +324,31 @@ function buildSlots() {
   });
 }
 
-function questionText() {
-  return state.ownMode ? state.own.trim() : state.question;
-}
-
 function buildSummary() {
-  const d = [
+  const rows = [
+    ['Комплекс', `${state.pack.title} — ${money(state.pack.price)}`],
     ['Тема', `${state.theme.emoji} ${state.theme.title}`],
-    ['Вопрос', questionText()],
-    ['Формат', state.format.title],
-    ['Имя', state.name.trim()],
-    ['Дата рождения', formatDate(state.bdate)],
-    ['Связь', state.slot],
   ];
-  $('#summary').innerHTML = d
+  const html = rows
     .map(([k, v]) => `<dl class="row"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></dl>`)
-    .join('');
+    .join('')
+    + `<dl class="row"><dt>Вопросы</dt><dd><ol class="qlist">`
+    + allQuestions().map((q) => `<li>${escapeHtml(q)}</li>`).join('')
+    + `</ol></dd></dl>`
+    + [
+        ['Имя', state.name.trim()],
+        ...(needsBirth() ? [['Дата рождения', formatDate(state.bdate)]] : []),
+        ['Связь', state.slot],
+      ]
+        .map(([k, v]) => `<dl class="row"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></dl>`)
+        .join('');
+  $('#summary').innerHTML = html;
 }
 
 function formatDate(iso) {
   if (!iso) return '';
-  const [y, m, dd] = iso.split('-');
-  return `${dd}.${m}.${y}`;
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
 }
 
 function escapeHtml(s) {
@@ -255,14 +359,12 @@ function escapeHtml(s) {
 
 function payload() {
   return {
+    package_id: state.pack.id,
     theme_id: state.theme.id,
-    theme: state.theme.title,
-    question: questionText(),
-    is_own: state.ownMode,
-    format_id: state.format.id,
-    format: state.format.title,
+    questions: state.picked.slice(),
+    own: ownFilled() ? [state.own.trim()] : [],
     name: state.name.trim(),
-    birth_date: state.bdate,
+    birth_date: needsBirth() ? state.bdate : '',
     slot: state.slot,
     consent: true,
   };
@@ -277,22 +379,13 @@ async function submit() {
   // боту через Telegram. Telegram сам закроет мини-апп, подтверждение
   // пришлёт бот сообщением в чат.
   if (CONFIG.api === false) {
-    let reason;
-    if (!tg) {
-      reason = 'Эта страница — форма Telegram-бота. Откройте её в Telegram: '
-             + 'напишите боту /start и нажмите «🔮 Записаться».';
-    } else if (!tg.initData) {
-      reason = 'Telegram не передал данные пользователя. Закройте форму и откройте её '
-             + 'заново кнопкой «🔮 Записаться» внизу чата.';
-    } else {
-      try { tg.sendData(JSON.stringify(body)); return; } catch (e) {
-        reason = 'Telegram не принял заявку: ' + (e && e.message ? e.message : e) + '. '
-               + 'Откройте форму кнопкой «🔮 Записаться» внизу чата, а не из меню бота.';
-      }
+    if (tg && tg.initData) {
+      try { tg.sendData(JSON.stringify(body)); return; } catch (_) {}
     }
     state.sending = false;
     notify('error');
-    if (tg) tg.showAlert(reason); else alert(reason);
+    const msg = 'Форму нужно открыть кнопкой «Записаться» в чате с ботом — только так заявка дойдёт.';
+    if (tg) tg.showAlert(msg); else alert(msg);
     syncButtons();
     return;
   }
@@ -311,7 +404,6 @@ async function submit() {
     render();
   } catch (e) {
     state.sending = false;
-    // Запасной путь: отдать данные боту напрямую (закроет мини-апп).
     if (tg && tg.initData) {
       try { tg.sendData(JSON.stringify(body)); return; } catch (_) {}
     }
@@ -325,15 +417,21 @@ async function submit() {
 
 function bindStaticControls() {
   $('#ownToggle').onclick = () => {
+    if (!state.ownMode && chosenCount() >= limit()) {
+      if (limit() === 1) {
+        state.picked = [];
+      } else {
+        notify('warning');
+        flashTally();
+        return;
+      }
+    }
     state.ownMode = !state.ownMode;
     $('#ownToggle').classList.toggle('sel', state.ownMode);
     $('#ownBox').hidden = !state.ownMode;
-    if (state.ownMode) {
-      state.question = null;
-      [...$('#questions').children].forEach((c) => c.classList.remove('sel'));
-      $('#ownText').focus();
-    }
+    if (state.ownMode) $('#ownText').focus();
     haptic();
+    paintQuestions();
     syncButtons();
   };
   $('#ownText').oninput = (e) => {
@@ -353,8 +451,7 @@ function bindStaticControls() {
     if (tg) tg.openTelegramLink(link); else window.open(link, '_blank');
   };
 
-  const today = new Date();
-  $('#bdate').max = today.toISOString().slice(0, 10);
+  $('#bdate').max = new Date().toISOString().slice(0, 10);
 }
 
 async function init() {
@@ -368,8 +465,8 @@ async function init() {
   const [cat, cfg] = await Promise.all(requests);
   CATALOG = cat;
   if (cfg && cfg.contact) CONFIG.contact = cfg.contact;
+  buildPacks();
   buildThemes();
-  buildFormats();
   buildSlots();
   if (state.name) $('#name').value = state.name;
   render();

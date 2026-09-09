@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap"
       media="print" onload="this.media='all'">
-<link rel="stylesheet" href="styles.css?v=c4de66a6">
+<link rel="stylesheet" href="styles.css?v=f93925a2">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -25,53 +25,57 @@
     <div class="hero">
       <div class="moon" aria-hidden="true">🌙</div>
       <h1>Расклад на ваш<br>вопрос</h1>
-      <p class="lead">Выберите тему и вопрос — я отвечу лично в течение дня и расскажу, как проходит расклад.</p>
+      <p class="lead">Заполните заявку — я разберу вашу ситуацию по картам и напишу вам лично в Telegram.</p>
     </div>
-    <ul class="bullets">
-      <li><span>1</span> Тема и вопрос из каталога</li>
-      <li><span>2</span> Пара слов о себе</li>
-      <li><span>3</span> Я пишу вам в личку</li>
-    </ul>
+    <ol class="steps">
+      <li><span>1</span><div><b>Выберите комплекс</b><i>От одного вопроса до личной консультации</i></div></li>
+      <li><span>2</span><div><b>Отметьте тему</b><i>Любовь, деньги, работа, выбор и другие</i></div></li>
+      <li><span>3</span><div><b>Отберите вопросы</b><i>Готовые формулировки или свой текст</i></div></li>
+      <li><span>4</span><div><b>Оставьте имя</b><i>И удобное время для связи</i></div></li>
+      <li><span>5</span><div><b>Отправьте заявку</b><i>Я напишу вам и расскажу, как всё проходит</i></div></li>
+    </ol>
     <p class="disclaimer">Расклады носят развлекательный характер и не являются медицинской, психологической или юридической консультацией. 18+</p>
   </section>
 
-  <!-- ШАГ 1 — темы -->
+  <!-- ШАГ 1 — комплекс -->
   <section class="step" data-step="1" hidden>
+    <h2 class="title">Выберите комплекс</h2>
+    <p class="sub">От количества вопросов зависит глубина разбора.</p>
+    <div class="packs" id="packs"></div>
+  </section>
+
+  <!-- ШАГ 2 — тема -->
+  <section class="step" data-step="2" hidden>
     <h2 class="title">О чём спросим карты?</h2>
     <p class="sub">Выберите тему — внутри готовые формулировки.</p>
     <div class="themes" id="themes"></div>
   </section>
 
-  <!-- ШАГ 2 — вопросы -->
-  <section class="step" data-step="2" hidden>
-    <h2 class="title" id="qTitle">Вопрос</h2>
-    <p class="sub">Выберите готовый или сформулируйте свой.</p>
+  <!-- ШАГ 3 — вопросы -->
+  <section class="step" data-step="3" hidden>
+    <h2 class="title" id="qTitle">Вопросы</h2>
+    <p class="sub" id="qSub">Отметьте вопросы из списка или задайте свой.</p>
     <div class="questions" id="questions"></div>
     <button class="own" id="ownToggle" type="button">✎ Задать свой вопрос</button>
     <div class="ownbox" id="ownBox" hidden>
       <textarea id="ownText" rows="3" maxlength="400" placeholder="Например: стоит ли мне принимать это предложение?"></textarea>
       <div class="counter"><span id="ownCount">0</span>/400</div>
     </div>
-  </section>
-
-  <!-- ШАГ 3 — формат -->
-  <section class="step" data-step="3" hidden>
-    <h2 class="title">Формат расклада</h2>
-    <p class="sub">Если сомневаетесь — выберите «Подскажите сами», обсудим в переписке.</p>
-    <div class="formats" id="formats"></div>
+    <div class="tally" id="tally"></div>
   </section>
 
   <!-- ШАГ 4 — данные -->
   <section class="step" data-step="4" hidden>
     <h2 class="title">Немного о вас</h2>
-    <p class="sub">Дата рождения нужна для расчёта карты года.</p>
+    <p class="sub" id="aboutSub">Как к вам обращаться и когда удобно получить ответ.</p>
     <label class="field">
       <span>Как к вам обращаться</span>
       <input id="name" type="text" maxlength="40" placeholder="Имя" autocomplete="given-name">
     </label>
-    <label class="field">
+    <label class="field" id="birthField" hidden>
       <span>Дата рождения</span>
       <input id="bdate" type="date" min="1930-01-01">
+      <em class="note">Нужна для расчёта главного аркана матрицы судьбы — он входит в комплекс VIP.</em>
     </label>
     <div class="field">
       <span>Удобное время для связи</span>
@@ -86,7 +90,7 @@
     <label class="consent">
       <input type="checkbox" id="consent">
       <span class="box" aria-hidden="true"></span>
-      <span class="txt">Согласен на обработку персональных данных (имя, дата рождения, вопрос) для связи по заявке. <a href="#" id="policyLink">Политика</a></span>
+      <span class="txt">Согласен на обработку персональных данных для связи по заявке. <a href="#" id="policyLink">Политика</a></span>
     </label>
   </section>
 
@@ -94,7 +98,7 @@
   <section class="step done" data-step="6" hidden>
     <div class="sealwrap"><div class="seal">✦</div></div>
     <h2 class="title">Заявка отправлена</h2>
-    <p class="sub center">Таролог напишет вам в Telegram. Обычно — в течение 15 минут, но не позже вечера.</p>
+    <p class="sub center">Таролог напишет вам в Telegram — обычно в течение 15 минут.</p>
     <button class="ghost" id="directBtn" type="button">Написать напрямую</button>
   </section>
 </main>
@@ -102,12 +106,12 @@
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-inner">
     <h3>Обработка персональных данных</h3>
-    <p>Мы собираем имя, дату рождения, ваш вопрос и Telegram-аккаунт — только чтобы связаться с вами и провести расклад. Данные не передаются третьим лицам и удаляются по вашему запросу в чате с тарологом.</p>
+    <p>Мы собираем имя, ваши вопросы, удобное время и Telegram-аккаунт — только чтобы связаться с вами и провести расклад. Дата рождения запрашивается лишь для комплекса VIP, где нужен расчёт аркана матрицы судьбы. Данные не передаются третьим лицам и удаляются по вашему запросу — командой /forget в чате с ботом.</p>
     <button class="ghost" id="sheetClose" type="button">Понятно</button>
   </div>
 </div>
 
-<script src="config.js?v=c4de66a6"></script>
-<script src="app.js?v=c4de66a6"></script>
+<script src="config.js?v=f93925a2"></script>
+<script src="app.js?v=f93925a2"></script>
 </body>
 </html>

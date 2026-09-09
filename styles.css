@@ -71,9 +71,20 @@ h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
 .moon{font-size:44px;text-shadow:0 0 22px rgba(226,205,160,.5);animation:float 5s ease-in-out infinite;will-change:transform}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 .lead{color:var(--muted);max-width:34ch;margin:0 auto;font-size:15px}
-.bullets{list-style:none;margin:30px 0;padding:0;display:grid;gap:10px}
-.bullets li{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);font-size:14px}
-.bullets span{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line-hi);color:var(--gold);font-family:var(--serif);font-size:14px}
+.steps{list-style:none;margin:28px 0;padding:0;display:grid;gap:2px;text-align:left}
+.steps li{position:relative;display:flex;align-items:flex-start;gap:14px;padding:12px 0 12px 0}
+/* Вертикальная линия связывает шаги в последовательность. */
+.steps li:not(:last-child)::before{
+  content:"";position:absolute;left:13px;top:38px;bottom:-4px;width:1px;
+  background:linear-gradient(180deg,var(--line-hi),rgba(226,205,160,.06));
+}
+.steps span{
+  flex:none;width:27px;height:27px;display:grid;place-items:center;border-radius:50%;
+  border:1px solid var(--line-hi);color:var(--gold);font-family:var(--serif);font-size:14px;
+  background:var(--bg);position:relative;z-index:1;
+}
+.steps b{display:block;font-size:14.5px;font-weight:600;margin-top:3px}
+.steps i{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
 .disclaimer{font-size:11.5px;line-height:1.45;color:#6f6889;text-align:center;margin:0}
 
 /* ——— темы ——— */
@@ -102,10 +113,23 @@ h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
 .q:active{transform:scale(.99)}
 .q.sel{border-color:var(--line-hi);background:var(--card-hi)}
 .q::after{
-  content:"";position:absolute;right:15px;top:50%;margin-top:-8px;width:16px;height:16px;border-radius:50%;
+  content:"✓";display:grid;place-items:center;font-size:12px;font-weight:700;color:transparent;
+  position:absolute;right:15px;top:50%;margin-top:-9px;width:18px;height:18px;border-radius:6px;
   border:1px solid var(--line-hi);transition:.2s;
 }
-.q.sel::after{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 3px rgba(226,205,160,.15)}
+.q.sel::after{background:var(--gold);border-color:var(--gold);color:#1a1430}
+/* Лимит комплекса исчерпан — неотмеченные вопросы гаснут. */
+.q.locked{opacity:.42}
+.own:disabled{opacity:.42;cursor:not-allowed}
+
+/* ——— счётчик выбранных вопросов ——— */
+.tally{
+  margin-top:14px;padding:12px 14px;border-radius:12px;text-align:center;font-size:13px;
+  background:var(--card);border:1px dashed var(--line);color:var(--muted);
+}
+.tally.on{border-style:solid;border-color:var(--line-hi);color:var(--gold)}
+.tally.full{border-style:solid;border-color:var(--gold-dim);background:rgba(226,205,160,.08);color:var(--gold)}
+.tally.shake{animation:shake .35s}
 .own{width:100%;padding:14px;border-radius:14px;background:none;border:1px dashed var(--line-hi);color:var(--gold);font-size:14px;cursor:pointer;font-family:var(--sans)}
 .own.sel{background:var(--card-hi);border-style:solid}
 .ownbox{margin-top:10px}
@@ -118,17 +142,30 @@ textarea{resize:none}
 textarea:focus,input:focus{border-color:var(--line-hi)}
 input[type=date]{min-height:49px;color-scheme:dark}
 .counter{text-align:right;font-size:11px;color:var(--muted);margin-top:6px}
+.note{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4;text-transform:none;letter-spacing:0}
 
-/* ——— форматы ——— */
-.formats{display:grid;gap:10px}
-.fmt{
-  text-align:left;cursor:pointer;padding:16px;border-radius:var(--r);
-  background:var(--card);border:1px solid var(--line);color:var(--text);transition:.2s;
+/* ——— комплексы ——— */
+.packs{display:grid;gap:10px}
+.pack{
+  position:relative;text-align:left;cursor:pointer;padding:16px 104px 14px 16px;
+  border-radius:var(--r);background:var(--card);border:1px solid var(--line);color:var(--text);
+  transition:border-color .2s,background .2s,transform .12s;
 }
-.fmt.sel{border-color:var(--line-hi);background:var(--card-hi)}
-.fmt b{display:block;font-family:var(--serif);font-size:19px;font-weight:600}
-.fmt i{font-style:normal;font-size:13px;color:var(--muted)}
-.fmt u{float:right;text-decoration:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-dim);border:1px solid var(--line);border-radius:20px;padding:3px 9px}
+.pack:active{transform:scale(.99)}
+.pack.sel{border-color:var(--line-hi);background:var(--card-hi)}
+.pack b{display:block;font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:4px}
+.pack i{display:block;font-style:normal;font-size:13px;color:var(--muted);line-height:1.4}
+.pack u{
+  display:inline-block;margin-top:10px;text-decoration:none;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--gold-dim);border:1px solid var(--line);border-radius:20px;padding:4px 10px;
+}
+.pack .price{
+  position:absolute;top:15px;right:14px;font-family:var(--serif);font-size:19px;
+  color:var(--gold);white-space:nowrap;
+}
+/* VIP — единственный комплекс с консультацией, поэтому он выделен. */
+.pack.vip{border-color:rgba(226,205,160,.3);background:linear-gradient(160deg,rgba(226,205,160,.07),var(--card) 60%)}
+.pack.vip.sel{border-color:var(--gold-dim)}
 
 /* ——— форма ——— */
 .field{display:block;margin-bottom:18px}
@@ -143,6 +180,8 @@ input[type=date]{min-height:49px;color-scheme:dark}
 .row:last-child{border:0}
 .row dt{flex:none;width:104px;color:var(--muted);font-size:12.5px;margin:2px 0 0}
 .row dd{margin:0;flex:1}
+.qlist{margin:0;padding-left:18px;display:grid;gap:6px}
+.qlist li{line-height:1.35}
 .consent{display:flex;gap:12px;align-items:flex-start;cursor:pointer;font-size:13px;color:var(--muted);line-height:1.45}
 .consent input{position:absolute;opacity:0;pointer-events:none}
 .consent .box{flex:none;width:22px;height:22px;border-radius:7px;border:1px solid var(--line-hi);margin-top:1px;display:grid;place-items:center;transition:.2s}
