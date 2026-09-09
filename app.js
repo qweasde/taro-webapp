@@ -167,6 +167,20 @@ function money(value) {
   return value.toLocaleString('ru-RU') + ' ₽';
 }
 
+// 1 вопрос, 2-4 вопроса, 5-20 вопросов.
+function questionWord(n) {
+  const hundreds = Math.abs(n) % 100;
+  const ones = hundreds % 10;
+  if (hundreds > 10 && hundreds < 20) return 'вопросов';
+  if (ones === 1) return 'вопрос';
+  if (ones >= 2 && ones <= 4) return 'вопроса';
+  return 'вопросов';
+}
+
+function questions(n) {
+  return `${n} ${questionWord(n)}`;
+}
+
 function buildPacks() {
   const wrap = $('#packs');
   wrap.innerHTML = '';
@@ -174,12 +188,11 @@ function buildPacks() {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'pack' + (p.needs_birth ? ' vip' : '');
-    const count = p.questions === 1 ? '1 вопрос' : `${p.questions} вопроса`;
     b.innerHTML =
       `<span class="price">${money(p.price)}</span>` +
       `<b>${p.title}</b>` +
       `<i>${p.desc}</i>` +
-      `<u>${count} · ${p.duration}</u>`;
+      `<u>${questions(p.questions)} · ${p.duration}</u>`;
     b.onclick = () => {
       if (state.pack && state.pack.id !== p.id) {
         // Лимит изменился — начинаем отбор вопросов заново.
@@ -224,7 +237,7 @@ function buildQuestions() {
   $('#qTitle').textContent = `${state.theme.emoji} ${state.theme.title}`;
   $('#qSub').textContent = limit() === 1
     ? 'Выберите один вопрос — или задайте свой.'
-    : `В комплексе «${state.pack.title}» — до ${limit()} вопросов. Отметьте нужные.`;
+    : `В комплексе «${state.pack.title}» — до ${questions(limit())}. Отметьте нужные.`;
 
   state.theme.questions.forEach((q) => {
     const b = document.createElement('button');
@@ -279,10 +292,10 @@ function paintQuestions() {
   const left = limit() - chosenCount();
   const tally = $('#tally');
   if (chosenCount() === 0) {
-    tally.textContent = limit() === 1 ? 'Выберите вопрос' : `Выберите до ${limit()} вопросов`;
+    tally.textContent = limit() === 1 ? 'Выберите вопрос' : `Выберите до ${questions(limit())}`;
     tally.className = 'tally';
   } else if (left > 0) {
-    tally.textContent = `Выбрано ${chosenCount()} из ${limit()} — можно добавить ещё ${left}`;
+    tally.textContent = `Выбрано ${chosenCount()} из ${limit()} — можно добавить ещё ${questions(left)}`;
     tally.className = 'tally on';
   } else {
     tally.textContent = `Выбрано ${chosenCount()} из ${limit()} — комплекс заполнен`;
