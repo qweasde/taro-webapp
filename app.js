@@ -281,7 +281,8 @@ function buildPacks() {
       [...wrap.children].forEach((c) => c.classList.remove('sel'));
       b.classList.add('sel');
       haptic();
-      setTimeout(next, 140);
+      syncButtons();
+      saveDraft();
     };
     wrap.appendChild(b);
   });
@@ -307,7 +308,8 @@ function buildThemes() {
       [...wrap.children].forEach((c) => c.classList.remove('sel'));
       b.classList.add('sel');
       haptic();
-      setTimeout(next, 140);
+      syncButtons();
+      saveDraft();
     };
     wrap.appendChild(b);
   });

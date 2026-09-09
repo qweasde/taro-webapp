@@ -91,7 +91,7 @@ h1{font-size:38px;line-height:1.08;margin:14px 0 12px}
 .themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .theme{
   position:relative;overflow:hidden;text-align:left;cursor:pointer;
-  padding:16px 14px 14px;border-radius:var(--r);
+  padding:16px 14px 30px;border-radius:var(--r);
   background:var(--card);border:1px solid var(--line);color:var(--text);
   transition:transform .15s,border-color .2s,background .2s;
 }
@@ -170,6 +170,15 @@ input[type=date]{min-height:49px;color-scheme:dark}
   position:absolute;top:15px;right:14px;font-family:var(--serif);font-size:19px;
   color:var(--gold);white-space:nowrap;
 }
+.pack.sel::after,
+.theme.sel::after{
+  content:"✓";position:absolute;display:grid;place-items:center;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--gold);color:#1a1430;font-size:13px;font-weight:700;
+}
+.pack.sel::after{right:14px;bottom:14px}
+.theme.sel::after{right:10px;top:10px}
+
 /* VIP — единственный комплекс с консультацией, поэтому он выделен. */
 .pack.vip{border-color:rgba(226,205,160,.3);background:linear-gradient(160deg,rgba(226,205,160,.07),var(--card) 60%)}
 .pack.vip.sel{border-color:var(--gold-dim)}
@@ -269,7 +278,7 @@ input[type=date]{min-height:49px;color-scheme:dark}
 /* Тема с выбранными вопросами помечается счётчиком. */
 .theme{position:relative}
 .theme .badge{
-  position:absolute;top:10px;right:10px;display:grid;place-items:center;
+  position:absolute;bottom:10px;right:10px;display:grid;place-items:center;
   min-width:19px;height:19px;padding:0 5px;border-radius:10px;
   background:var(--gold);color:#1a1430;font-size:11px;font-weight:700;
 }
