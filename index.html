@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap"
       media="print" onload="this.media='all'">
-<link rel="stylesheet" href="styles.css?v=ea11128f">
+<link rel="stylesheet" href="styles.css?v=0b3692e3">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -75,8 +75,12 @@
     <button class="own" id="ownToggle" type="button">✎ Задать свой вопрос</button>
     <div class="ownbox" id="ownBox" hidden>
       <textarea id="ownText" rows="3" maxlength="400" placeholder="Например: стоит ли мне принимать это предложение?"></textarea>
-      <div class="counter"><span id="ownCount">0</span>/400</div>
+      <div class="ownfoot">
+        <span class="counter"><span id="ownCount">0</span>/400</span>
+        <button type="button" id="ownAdd" disabled>Добавить</button>
+      </div>
     </div>
+    <div class="ownlist" id="ownList" hidden></div>
 
     <div class="picked" id="pickedList" hidden></div>
     <div class="tally" id="tally"></div>
@@ -138,7 +142,7 @@
   </div>
 </div>
 
-<script src="config.js?v=ea11128f"></script>
-<script src="app.js?v=ea11128f"></script>
+<script src="config.js?v=0b3692e3"></script>
+<script src="app.js?v=0b3692e3"></script>
 </body>
 </html>

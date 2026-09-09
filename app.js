@@ -6,7 +6,7 @@ const STEPS = ['', 'Комплекс', 'Тема', 'Вопросы', 'Запис
 // Столько вопросов видно сразу — длинный список утомляет, особенно в VIP на 10 вопросов.
 const VISIBLE_QUESTIONS = 7;
 const BOOKING_DAYS = 14;      // на сколько дней вперёд предлагаем запись
-const DRAFT_KEY = 'taro-draft-v3';
+const DRAFT_KEY = 'taro-draft-v4';
 const DRAFT_TTL_MS = 24 * 3600 * 1000;
 
 const state = {
@@ -14,8 +14,8 @@ const state = {
   pack: null,         // выбранный комплекс
   theme: null,        // тема, открытая на экране вопросов
   picked: [],         // [{theme_id, theme, text}] — отмеченные вопросы
-  own: '',            // свой вопрос текстом
-  ownMode: false,     // свой вопрос занимает место в комплексе
+  own: '',            // текст в поле ввода
+  owns: [],           // добавленные свои вопросы — их может быть несколько
   name: '',
   bdate: '',
   slotDate: '',
@@ -112,7 +112,7 @@ function saveDraft() {
       themeId: state.theme ? state.theme.id : null,
       picked: state.picked,
       own: state.own,
-      ownMode: state.ownMode,
+      owns: state.owns,
       name: state.name,
       bdate: state.bdate,
       slotDate: state.slotDate,
@@ -147,7 +147,9 @@ function restoreDraft() {
   state.picked = (saved.picked || []).filter((p) => known.has(p.theme_id + '|' + p.text));
 
   state.own = saved.own || '';
-  state.ownMode = !!saved.ownMode && state.own.length > 0;
+  state.owns = (saved.owns || [])
+    .filter((t) => typeof t === 'string' && t.trim().length >= 5)
+    .slice(0, pack.questions);
   state.name = saved.name || state.name;
   state.bdate = saved.bdate || '';
   state.slotDate = isDateOffered(saved.slotDate) ? saved.slotDate : '';
@@ -170,12 +172,13 @@ function multiTheme() {
   return !!(state.pack && state.pack.multi_theme);
 }
 
-function ownFilled() {
-  return state.ownMode && state.own.trim().length >= 5;
+// Готов ли текст в поле к добавлению в список.
+function ownReady() {
+  return state.own.trim().length >= 5;
 }
 
 function chosenCount() {
-  return state.picked.length + (state.ownMode ? 1 : 0);
+  return state.picked.length + state.owns.length;
 }
 
 function needsBirth() {
@@ -240,8 +243,7 @@ function canGoNext() {
   switch (state.step) {
     case 1: return !!state.pack;
     case 2: return !!state.theme;
-    case 3: return chosenCount() > 0 && chosenCount() <= limit()
-                && (!state.ownMode || ownFilled());
+    case 3: return chosenCount() > 0 && chosenCount() <= limit();
     case 4: return state.name.trim().length >= 2 && !!state.slotDate && !!state.slotTime
                 && (!needsBirth() || !!state.bdate);
     case 5: return state.consent && !state.sending;
@@ -320,7 +322,7 @@ function buildPacks() {
       if (state.pack && state.pack.id !== p.id) {
         // Лимит и правила изменились — отбор вопросов начинаем заново.
         state.picked = [];
-        state.ownMode = false;
+        state.owns = [];
         state.own = '';
       }
       state.pack = p;
@@ -369,8 +371,8 @@ function buildQuestions() {
   $('#search').value = '';
   $('#searchClear').hidden = true;
   buildThemeChips();
-  $('#ownToggle').classList.toggle('sel', state.ownMode);
-  $('#ownBox').hidden = !state.ownMode;
+  $('#ownBox').hidden = true;
+  $('#ownToggle').classList.remove('sel');
   $('#ownText').value = state.own;
   $('#ownCount').textContent = state.own.length;
   renderQuestionList();
@@ -461,7 +463,9 @@ function renderQuestionList() {
     more.hidden = folded === 0;
   }
 
-  $('#ownToggle').disabled = full && !state.ownMode && limit() > 1;
+  $('#ownToggle').disabled = full && limit() > 1;
+  $('#ownAdd').disabled = !ownReady() || (full && limit() > 1);
+  renderOwnList();
   renderPicked();
   renderTally();
 }
@@ -474,9 +478,7 @@ function toggleQuestion(theme, text) {
     if (limit() === 1) {
       // Для «Экспресса» удобнее менять выбор, а не снимать прежний вручную.
       state.picked = [{ theme_id: theme.id, theme: `${theme.emoji} ${theme.title}`, text }];
-      state.ownMode = false;
-      $('#ownBox').hidden = true;
-      $('#ownToggle').classList.remove('sel');
+      state.owns = [];
     } else {
       notify('warning');
       flashTally();
@@ -490,6 +492,63 @@ function toggleQuestion(theme, text) {
   renderQuestionList();
   syncButtons();
   saveDraft();
+}
+
+/* Своих вопросов можно добавить сколько влезает в комплекс. */
+function addOwnQuestion() {
+  const text = state.own.trim();
+  if (text.length < 5) return;
+  if (chosenCount() >= limit()) {
+    if (limit() === 1) {
+      // «Экспресс»: новый вопрос вытесняет прежний выбор.
+      state.picked = [];
+      state.owns = [];
+    } else {
+      notify('warning');
+      flashTally();
+      return;
+    }
+  }
+  if (state.owns.includes(text)) {
+    notify('warning');
+    return;
+  }
+  state.owns.push(text);
+  state.own = '';
+  $('#ownText').value = '';
+  $('#ownCount').textContent = '0';
+  haptic();
+
+  // Комплекс заполнен — поле ввода больше не нужно.
+  if (chosenCount() >= limit()) {
+    $('#ownBox').hidden = true;
+    $('#ownToggle').classList.remove('sel');
+  } else {
+    $('#ownText').focus();
+  }
+  renderQuestionList();
+  syncButtons();
+  saveDraft();
+}
+
+function renderOwnList() {
+  const box = $('#ownList');
+  box.hidden = state.owns.length === 0;
+  if (box.hidden) return;
+  box.innerHTML = '<div class="picked-head">Ваши вопросы</div>'
+    + state.owns.map((text, i) =>
+        `<button type="button" class="picked-item own-item" data-index="${i}">`
+        + `<small>Свой вопрос</small>${escapeHtml(text)}<i>✕</i></button>`
+      ).join('');
+  [...box.querySelectorAll('.own-item')].forEach((b) => {
+    b.onclick = () => {
+      state.owns.splice(Number(b.dataset.index), 1);
+      haptic();
+      renderQuestionList();
+      syncButtons();
+      saveDraft();
+    };
+  });
 }
 
 /* Выбранное из других тем иначе не видно — держим список под рукой. */
@@ -615,9 +674,9 @@ function slotLabel() {
 /* ——————————————————— Сводка и отправка ——————————————————— */
 
 function allQuestions() {
-  const list = state.picked.slice();
-  if (ownFilled()) list.push({ theme_id: '', theme: 'Свой вопрос', text: state.own.trim() });
-  return list;
+  return state.picked.concat(
+    state.owns.map((text) => ({ theme_id: '', theme: 'Свой вопрос', text }))
+  );
 }
 
 function buildSummary() {
@@ -662,7 +721,7 @@ function payload() {
   return {
     package_id: state.pack.id,
     picked: state.picked.map((p) => ({ theme_id: p.theme_id, q: p.text })),
-    own: ownFilled() ? [state.own.trim()] : [],
+    own: state.owns.slice(),
     name: state.name.trim(),
     birth_date: needsBirth() ? state.bdate : '',
     slot_date: state.slotDate,
@@ -734,31 +793,35 @@ function bindStaticControls() {
     haptic();
     renderQuestionList();
   };
+  // Кнопка только открывает и закрывает поле ввода — место в комплексе
+  // занимает уже добавленный вопрос, а не сам факт открытого поля.
   $('#ownToggle').onclick = () => {
-    if (!state.ownMode && chosenCount() >= limit()) {
-      if (limit() === 1) {
-        state.picked = [];
-      } else {
-        notify('warning');
-        flashTally();
-        return;
-      }
+    const open = $('#ownBox').hidden;
+    if (open && chosenCount() >= limit() && limit() > 1) {
+      notify('warning');
+      flashTally();
+      return;
     }
-    state.ownMode = !state.ownMode;
-    $('#ownToggle').classList.toggle('sel', state.ownMode);
-    $('#ownBox').hidden = !state.ownMode;
-    if (state.ownMode) $('#ownText').focus();
+    $('#ownBox').hidden = !open;
+    $('#ownToggle').classList.toggle('sel', open);
+    if (open) $('#ownText').focus();
     haptic();
     renderQuestionList();
-    syncButtons();
-    saveDraft();
   };
   $('#ownText').oninput = (e) => {
     state.own = e.target.value;
     $('#ownCount').textContent = e.target.value.length;
-    syncButtons();
+    $('#ownAdd').disabled = !ownReady() || (chosenCount() >= limit() && limit() > 1);
     saveDraft();
   };
+  $('#ownText').onkeydown = (e) => {
+    // Enter отправляет вопрос в список, перенос строки — по Shift+Enter.
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      addOwnQuestion();
+    }
+  };
+  $('#ownAdd').onclick = addOwnQuestion;
   $('#name').oninput = (e) => { state.name = e.target.value; syncButtons(); saveDraft(); };
   $('#bdate').oninput = (e) => { state.bdate = e.target.value; syncButtons(); saveDraft(); };
   $('#consent').onchange = (e) => { state.consent = e.target.checked; haptic(); syncButtons(); };

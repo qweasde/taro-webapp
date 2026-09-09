@@ -148,7 +148,14 @@ textarea,input[type=text],input[type=date]{
 textarea{resize:none}
 textarea:focus,input:focus{border-color:var(--line-hi)}
 input[type=date]{min-height:45px;color-scheme:dark}
-.counter{text-align:right;font-size:11px;color:var(--muted);margin-top:6px}
+.counter{font-size:11px;color:var(--muted)}
+.ownfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.ownfoot button{
+  padding:9px 16px;border-radius:20px;cursor:pointer;font:13px var(--sans);
+  background:var(--gold);border:0;color:#1a1430;font-weight:600;
+}
+.ownfoot button:disabled{opacity:.35;cursor:not-allowed}
+.ownlist{margin-top:14px;display:grid;gap:8px}
 .note{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4;text-transform:none;letter-spacing:0}
 
 /* ——— комплексы ——— */
